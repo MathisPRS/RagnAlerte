@@ -1,0 +1,8 @@
+services:
+  ragn-alerte:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8051:80"
+    restart: unless-stopped

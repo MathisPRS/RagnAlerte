@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { updateUserEmail, updateUserPassword, exportUserData, getNoPeriodMode, setNoPeriodMode } from '../services/db';
+import { updateUserEmail, updateUserPassword, exportUserData, getNoPeriodMode, setNoPeriodMode, resetUserData } from '../services/db';
 import { hashPassword, verifyPassword } from '../utils/crypto';
 
 export function ProfilPage() {
@@ -22,6 +22,8 @@ export function ProfilPage() {
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   // No-period mode
   const [noPeriodEnabled, setNoPeriodEnabled] = useState(false);
@@ -101,6 +103,15 @@ export function ProfilPage() {
     setConfirmPassword('');
     setShowPasswordForm(false);
     setIsSaving(false);
+  };
+
+  const handleReset = async () => {
+    if (!user) return;
+    setIsResetting(true);
+    await resetUserData(user.id);
+    setShowResetConfirm(false);
+    setIsResetting(false);
+    navigate('/', { replace: true });
   };
 
   const handleExport = async () => {
@@ -322,6 +333,47 @@ export function ProfilPage() {
                 </div>
                 <span className="material-symbols-outlined text-outline-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
               </button>
+
+              {/* Reset */}
+              {!showResetConfirm ? (
+                <button
+                  onClick={() => setShowResetConfirm(true)}
+                  className="w-full flex items-center justify-between p-4 bg-surface-container-lowest rounded-[1.25rem] hover:bg-error-container/20 transition-colors group active:scale-[0.99]"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center text-error">
+                      <span className="material-symbols-outlined">delete_forever</span>
+                    </div>
+                    <div className="text-left">
+                      <span className="text-error block font-medium">Réinitialiser mes données</span>
+                      <span className="text-[11px] text-on-surface-variant uppercase tracking-wider">Supprime cycles, symptômes, notes</span>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-error/40 group-hover:translate-x-1 transition-transform">chevron_right</span>
+                </button>
+              ) : (
+                <div className="px-4 py-4 bg-error/8 rounded-[1.25rem] space-y-3">
+                  <p className="text-error font-bold text-sm">Supprimer toutes vos données ?</p>
+                  <p className="text-on-surface-variant text-xs leading-relaxed">
+                    Cycles, symptômes et notes seront définitivement effacés. Votre compte est conservé.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowResetConfirm(false)}
+                      className="flex-1 py-2.5 bg-surface-container text-on-surface rounded-full font-bold text-sm active:scale-95 transition-all"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={handleReset}
+                      disabled={isResetting}
+                      className="flex-1 py-2.5 bg-error text-on-error rounded-full font-bold text-sm active:scale-95 transition-all disabled:opacity-60"
+                    >
+                      {isResetting ? 'Suppression...' : 'Confirmer'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 

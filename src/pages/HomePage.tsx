@@ -242,7 +242,7 @@ export function HomePage() {
                 onClick={() => navigate('/enregistrer-regles')}
                 className="bg-primary/10 text-primary font-headline font-bold px-4 py-1.5 rounded-full text-[11px] hover:bg-primary/20 active:scale-95 transition-all"
               >
-                {!hasCycles ? 'Commencer' : cycleInfo?.phase === 'menstrual' ? 'Modifier les règles' : 'Nouvelles règles'}
+                Renseigner le cycle
               </button>
             </div>
           </div>

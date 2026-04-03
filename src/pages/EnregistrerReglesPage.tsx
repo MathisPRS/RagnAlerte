@@ -36,12 +36,8 @@ export function EnregistrerReglesPage() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // mode: 'view' | 'start' | 'end' | 'edit'
-  // 'view'  → page d'accueil contextuelle (boutons dynamiques)
-  // 'start' → confirmer le début d'un nouveau cycle (aujourd'hui)
-  // 'end'   → confirmer la fin du cycle en cours
-  // 'edit'  → calendrier interactif pour cocher/décocher les jours
-  const [mode, setMode] = useState<'view' | 'start' | 'end' | 'edit'>('view');
+  // mode: 'view' | 'edit'
+  const [mode, setMode] = useState<'view' | 'edit'>('view');
 
   // Edit mode state
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -192,19 +188,9 @@ export function EnregistrerReglesPage() {
             <span className="material-symbols-outlined text-on-surface-variant text-xl">arrow_back</span>
           </button>
           <h1 className="font-headline font-bold text-lg text-on-surface tracking-tight">
-            {mode === 'edit' ? 'Modifier les jours' : 'Mes règles'}
+            {mode === 'edit' ? 'Modifier / renseigner un cycle' : 'Renseigner le cycle'}
           </h1>
         </div>
-        {/* Edit button (visible in view mode when there's a cycle) */}
-        {mode === 'view' && lastCycle && (
-          <button
-            onClick={enterEditMode}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-container-high transition-colors active:scale-95"
-            title="Modifier les jours"
-          >
-            <span className="material-symbols-outlined text-on-surface-variant text-xl">edit_calendar</span>
-          </button>
-        )}
       </header>
 
       <main className="flex-1 px-5 pt-4 pb-10">
@@ -218,15 +204,33 @@ export function EnregistrerReglesPage() {
                 <span className="material-symbols-outlined text-primary text-4xl icon-fill">water_drop</span>
               </div>
 
+              {/* ── 0 données ── */}
               {!lastCycle && (
                 <>
-                  <h2 className="font-headline font-bold text-xl text-on-surface mb-1">Premier cycle</h2>
+                  <h2 className="font-headline font-bold text-xl text-on-surface mb-1">Bienvenue !</h2>
                   <p className="text-on-surface-variant text-sm leading-relaxed mb-6">
-                    Enregistrez le début de vos règles pour commencer le suivi de votre cycle.
+                    Pour commencer le suivi, indiquez si vos règles ont démarré aujourd'hui, ou renseignez un cycle passé pour que les prévisions soient précises dès le départ.
                   </p>
+                  <div className="w-full space-y-3">
+                    <button
+                      onClick={handleStartCycle}
+                      disabled={isSaving}
+                      className="w-full py-4 bg-primary text-on-primary rounded-full font-headline font-bold text-base shadow-[0_8px_30px_rgba(161,59,87,0.25)] hover:opacity-90 transition-all active:scale-95 disabled:opacity-40"
+                    >
+                      {isSaving ? 'Enregistrement...' : 'Mes règles ont commencé aujourd\'hui'}
+                    </button>
+                    <button
+                      onClick={() => { setEditedDays(new Set()); setViewYear(today.getFullYear()); setViewMonth(today.getMonth()); setMode('edit'); }}
+                      className="w-full py-3.5 bg-surface-container text-on-surface rounded-full font-headline font-semibold text-sm hover:bg-surface-container-high transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-lg text-on-surface-variant">edit_calendar</span>
+                      Renseigner un cycle passé
+                    </button>
+                  </div>
                 </>
               )}
 
+              {/* ── Cycle en cours ── */}
               {lastCycle && hasActiveCycle && (
                 <>
                   <h2 className="font-headline font-bold text-xl text-on-surface mb-1">Règles en cours</h2>
@@ -239,9 +243,26 @@ export function EnregistrerReglesPage() {
                   <p className="text-on-surface-variant text-xs mb-6">
                     Jour {Math.floor((today.getTime() - parseDate(lastCycle.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1} des règles
                   </p>
+                  <div className="w-full space-y-3">
+                    <button
+                      onClick={handleEndCycle}
+                      disabled={isSaving}
+                      className="w-full py-4 bg-primary text-on-primary rounded-full font-headline font-bold text-base shadow-[0_8px_30px_rgba(161,59,87,0.25)] hover:opacity-90 transition-all active:scale-95 disabled:opacity-40"
+                    >
+                      {isSaving ? 'Enregistrement...' : 'Mes règles sont terminées'}
+                    </button>
+                    <button
+                      onClick={enterEditMode}
+                      className="w-full py-3.5 bg-surface-container text-on-surface rounded-full font-headline font-semibold text-sm hover:bg-surface-container-high transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-lg text-on-surface-variant">edit_calendar</span>
+                      Modifier / renseigner un cycle
+                    </button>
+                  </div>
                 </>
               )}
 
+              {/* ── Données mais pas de cycle en cours ── */}
               {lastCycle && !hasActiveCycle && (
                 <>
                   <h2 className="font-headline font-bold text-xl text-on-surface mb-1">Nouveau cycle</h2>
@@ -254,44 +275,24 @@ export function EnregistrerReglesPage() {
                   <p className="text-on-surface-variant text-xs mb-6">
                     Appuyez ci-dessous dès que vos règles commencent
                   </p>
+                  <div className="w-full space-y-3">
+                    <button
+                      onClick={handleStartCycle}
+                      disabled={isSaving}
+                      className="w-full py-4 bg-primary text-on-primary rounded-full font-headline font-bold text-base shadow-[0_8px_30px_rgba(161,59,87,0.25)] hover:opacity-90 transition-all active:scale-95 disabled:opacity-40"
+                    >
+                      {isSaving ? 'Enregistrement...' : 'Mes règles ont commencé'}
+                    </button>
+                    <button
+                      onClick={enterEditMode}
+                      className="w-full py-3.5 bg-surface-container text-on-surface rounded-full font-headline font-semibold text-sm hover:bg-surface-container-high transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-lg text-on-surface-variant">edit_calendar</span>
+                      Modifier / renseigner un cycle
+                    </button>
+                  </div>
                 </>
               )}
-
-              {/* ── Boutons contextuels ── */}
-              <div className="w-full space-y-3">
-                {/* Pas de cycle actif → seul bouton possible : commencer */}
-                {!hasActiveCycle && (
-                  <button
-                    onClick={handleStartCycle}
-                    disabled={isSaving}
-                    className="w-full py-4 bg-primary text-on-primary rounded-full font-headline font-bold text-base shadow-[0_8px_30px_rgba(161,59,87,0.25)] hover:opacity-90 transition-all active:scale-95 disabled:opacity-40"
-                  >
-                    {isSaving ? 'Enregistrement...' : lastCycle ? 'Mes règles ont commencé' : 'Commencer le suivi'}
-                  </button>
-                )}
-
-                {/* Cycle actif → bouton terminer uniquement */}
-                {hasActiveCycle && (
-                  <button
-                    onClick={handleEndCycle}
-                    disabled={isSaving}
-                    className="w-full py-4 bg-primary text-on-primary rounded-full font-headline font-bold text-base shadow-[0_8px_30px_rgba(161,59,87,0.25)] hover:opacity-90 transition-all active:scale-95 disabled:opacity-40"
-                  >
-                    {isSaving ? 'Enregistrement...' : 'Mes règles sont terminées'}
-                  </button>
-                )}
-
-                {/* Toujours accessible si un cycle existe : modifier les jours */}
-                {lastCycle && (
-                  <button
-                    onClick={enterEditMode}
-                    className="w-full py-3.5 bg-surface-container text-on-surface rounded-full font-headline font-semibold text-sm hover:bg-surface-container-high transition-all active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    <span className="material-symbols-outlined text-lg text-on-surface-variant">edit_calendar</span>
-                    Modifier les jours manuellement
-                  </button>
-                )}
-              </div>
             </section>
 
             {/* Historique résumé */}
@@ -330,8 +331,7 @@ export function EnregistrerReglesPage() {
         )}
 
         {/* ══ EDIT MODE ════════════════════════════════════════════════════════ */}
-        {mode === 'edit' && (
-          <>
+        {mode === 'edit' && (          <>
             {/* Summary chip */}
             <div className="bg-primary/8 rounded-[1.25rem] px-4 py-3 mb-4 flex items-center gap-3">
               <span className="material-symbols-outlined text-primary text-lg shrink-0">calendar_month</span>

@@ -450,6 +450,18 @@ export function setNoPeriodMode(userId: number, enabled: boolean, referenceDate:
   localStorage.setItem(`ragn_no_period_${userId}`, JSON.stringify({ enabled, referenceDate }));
 }
 
+// Supprime toutes les données de l'utilisateur (cycles, logs, symptômes)
+// sans supprimer le compte lui-même.
+export async function resetUserData(userId: number) {
+  const database = await getDb();
+  database.run(`DELETE FROM cycles WHERE user_id = ?`, [userId]);
+  database.run(`DELETE FROM daily_logs WHERE user_id = ?`, [userId]);
+  database.run(`DELETE FROM symptoms WHERE user_id = ?`, [userId]);
+  persistDb();
+  // Efface aussi le mode sans règles
+  localStorage.removeItem(`ragn_no_period_${userId}`);
+}
+
 export async function exportUserData(userId: number) {
   const cycles = await getCycles(userId);
   const logs = await getAllDailyLogs(userId);
